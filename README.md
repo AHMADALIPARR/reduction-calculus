@@ -161,10 +161,11 @@ Nothing outside Lean's prelude is imported.
 To check a single theorem:
 
 ```sh
-lake env lean --run /dev/stdin <<'EOF'
+cat > /tmp/check.lean <<'EOF'
 import ReductionCalculus
 #print axioms ReductionCalculus.Nest37
 EOF
+lake env lean /tmp/check.lean
 ```
 
 ## Provenance and scope
