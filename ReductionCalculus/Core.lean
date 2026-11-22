@@ -97,6 +97,17 @@ theorem iterateStep_add (f : α → α) (m n : Nat) (x : α) :
   | zero => rfl
   | succ n ih => simp only [Nat.add_succ, iterateStep_succ, ih]
 
+/-- Zero steps are the identity function. -/
+theorem iterateStep_zero_eq_id (f : α → α) : iterateStep f 0 = id :=
+  rfl
+
+/-- **`iterateStep` is a monoid action** of `(Nat, +, 0)` on `α → α`:
+`n + m` steps are `m` steps after `n` steps. -/
+theorem iterateStep_comp (f : α → α) (m n : Nat) :
+    iterateStep f (m + n) = iterateStep f n ∘ iterateStep f m := by
+  funext x
+  exact iterateStep_add f m n x
+
 /-- `deepReduce f g n x` performs `n` reduction steps of `f` on `x` and then
 collapses the accumulated value with `g`. -/
 def deepReduce {α : Sort _} (f g : α → α) (n : Nat) (x : α) : α :=
@@ -121,6 +132,13 @@ theorem deepReduce_succ (f g : α → α) (n : Nat) (x : α) :
 theorem deepReduce_add (f g : α → α) (m n : Nat) (x : α) :
     deepReduce f g (m + n) x = g (iterateStep f n (iterateStep f m x)) := by
   simp [deepReduce, iterateStep_add]
+
+/-- `deepReduce f g n` is the collapse `g` composed with the `n`-step
+action `iterateStep f n`. This is the precise sense in which a deep
+reduction is a fold: iterate the step, collapse once. -/
+theorem deepReduce_eq_comp (f g : α → α) (n : Nat) :
+    deepReduce f g n = g ∘ iterateStep f n :=
+  rfl
 
 /-! ## Invariants
 

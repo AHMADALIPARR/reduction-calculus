@@ -112,6 +112,11 @@ example : ∀ k : Fin 3, 0 < (k : Nat) + 1 :=
 example : 0 < 3 :=
   ltChain.last (by decide)
 
+/-- The two presentations agree: the chain *is* a reduction from its first
+proposition to its last. -/
+example : Reduces ImpStep (0 < 1) (0 < 3) :=
+  ltChain.toReduces
+
 /-- A chain of implications reduces its endpoints. -/
 example : 1 < 2 → 3 < 4 := by
   have h : Reduces ImpStep (1 < 2) (3 < 4) :=

@@ -1,0 +1,48 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (toolchain from lean-toolchain)
+        uses: leanprover/lean-action@v1
+
+      - name: Reject sorry / admit
+        run: |
+          if grep -rnE --include='*.lean' '\b(sorry|admit)\b' ReductionCalculus ReductionCalculus.lean; then
+            echo "::error::found sorry or admit in sources"
+            exit 1
+          fi
+          echo "no sorry/admit found"
+
+      - name: Axiom audit
+        run: |
+          cat > /tmp/axioms.lean <<'EOF'
+          import ReductionCalculus
+          #print axioms ReductionCalculus.Nest19
+          #print axioms ReductionCalculus.Nest37
+          #print axioms ReductionCalculus.Nest19_source
+          #print axioms ReductionCalculus.nest
+          #print axioms ReductionCalculus.deepReduce_preserves
+          EOF
+          lake env lean /tmp/axioms.lean | tee /tmp/axioms.out
+          if grep -q 'sorryAx' /tmp/axioms.out; then
+            echo "::error::a checked theorem depends on sorryAx"
+            exit 1
+          fi
+
+      - name: Nest.lean is up to date with its generator
+        run: |
+          python3 scripts/gen_nest.py > /tmp/Nest.lean
+          diff -u ReductionCalculus/Nest.lean /tmp/Nest.lean

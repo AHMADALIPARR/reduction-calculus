@@ -82,6 +82,15 @@ theorem reduces_imp {p q : Prop} (h : Reduces ImpStep p q) : p → q :=
 theorem reduces_imp_single {p q : Prop} (h : p → q) : Reduces ImpStep p q :=
   .step h (.refl q)
 
+/-- **The closure of implication is implication.** Reduction adds nothing to
+`→`: `Reduces ImpStep` and `→` are the same relation.
+
+Together with `reduces_imp` this says the chain calculus is sound *and*
+complete for implication chains — there are no chains that prove more than
+`→` does, and none that prove less. -/
+theorem reduces_imp_iff {p q : Prop} : Reduces ImpStep p q ↔ (p → q) :=
+  ⟨reduces_imp, reduces_imp_single⟩
+
 /-! ## Finite chains -/
 
 /-- A chain of `n + 1` propositions in which each position implies the next.
@@ -96,9 +105,25 @@ namespace Chain
 
 variable {n : Nat} {P : Fin (n + 1) → Prop}
 
-/-- Every position of a chain is reached from position `0`. -/
+/-- **A chain is a reduction.** Each position is reached from position `0`
+by a `Reduces ImpStep` chain, built by `Fin.induction` and `Reduces.trans`.
+
+This is the bridge between the two presentations: the `have`-chain of the
+`Nest` proofs and the reflexive–transitive closure `Reduces`. -/
+theorem toReduces_aux (c : Chain P) : ∀ k : Fin (n + 1), Reduces ImpStep (P 0) (P k) :=
+  Fin.induction (Reduces.refl (P 0)) (fun k ih => ih.trans (Reduces.single (c.step k)))
+
+/-- The whole chain is a reduction from its first to its last proposition. -/
+theorem toReduces (c : Chain P) : Reduces ImpStep (P 0) (P (Fin.last n)) :=
+  c.toReduces_aux (Fin.last n)
+
+/-- Every position of a chain is reached from position `0`.
+
+Note that this is *not* a second induction: it is `toReduces_aux` followed
+by soundness (`reduces_imp`). Reaching position `k` and reducing the chain
+to position `k` are the same fact. -/
 theorem apply (c : Chain P) (h₀ : P 0) : ∀ k : Fin (n + 1), P k :=
-  Fin.induction h₀ (fun k ih => c.step k ih)
+  fun k => reduces_imp (c.toReduces_aux k) h₀
 
 /-- The last proposition of a chain follows from the first. -/
 theorem last (c : Chain P) (h₀ : P 0) : P (Fin.last n) :=
