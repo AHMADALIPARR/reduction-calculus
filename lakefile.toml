@@ -1,0 +1,6 @@
+name = "reduction_calculus"
+version = "0.1.0"
+defaultTargets = ["ReductionCalculus"]
+
+[[lean_lib]]
+name = "ReductionCalculus"
